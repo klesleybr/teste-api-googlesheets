@@ -1,5 +1,8 @@
 package com.example.googlesheetsapi.util;
 
+// Adicionar o arquivo credentials.json em src/main/resources
+// Vídeo: https://youtu.be/4mP3Fsi4hio
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
