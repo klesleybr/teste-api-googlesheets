@@ -30,6 +30,10 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.Permission;
+import com.google.api.services.people.v1.PeopleService;
+import com.google.api.services.people.v1.PeopleService.People;
+import com.google.api.services.people.v1.PeopleServiceScopes;
+import com.google.api.services.people.v1.model.Person;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.Sheet;
@@ -44,8 +48,10 @@ public class GoogleSheetsApiUtil {
 	private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 	private static final String TOKENS_DIRECTORY_PATH = "tokens";
 	
+	
 	private static final List<String> SCOPES =
-			Arrays.asList(SheetsScopes.SPREADSHEETS, SheetsScopes.DRIVE);
+			Arrays.asList(SheetsScopes.SPREADSHEETS, SheetsScopes.DRIVE, PeopleServiceScopes.USERINFO_EMAIL, 
+					PeopleServiceScopes.USERINFO_PROFILE);
 	private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 	
 	
@@ -61,8 +67,10 @@ public class GoogleSheetsApiUtil {
 		
 		GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
 				HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-				.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(System.getProperty("user.home"), TOKENS_DIRECTORY_PATH)))
+				.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
 				.setAccessType("offline").build();
+		
+		//new java.io.File(System.getProperty("user.home"), TOKENS_DIRECTORY_PATH)
 		
 		LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
 		return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
@@ -172,6 +180,28 @@ public class GoogleSheetsApiUtil {
 	/*public static void main(String[] args) throws GeneralSecurityException, IOException {
 		
 	}*/
+	
+	private PeopleService getPeopleService() throws GeneralSecurityException, IOException {
+		final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+		
+		PeopleService peopleService = new PeopleService.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+				.setApplicationName(APPLICATION_NAME).build();
+		return peopleService;
+	}
+	
+	public Map<String,String> getAttributesUser() throws IOException, GeneralSecurityException{
+		System.out.println("Até aqui------");
+		Person profile = getPeopleService().people().get("people/me").setPersonFields("names,emailAddresses,photos").execute();
+		
+		System.out.println("Até aqui------");
+		
+		Map<String,String> attributesUser = new HashMap<>();
+		attributesUser.put("name", profile.getNames().get(0).getDisplayName());
+		attributesUser.put("email", profile.getEmailAddresses().get(0).getValue());
+		attributesUser.put("userPhotoUrl", profile.getPhotos().get(0).getUrl());
+		
+		return attributesUser;
+	}
 }
 
 /*Caused by: java.lang.IllegalStateException: You are currently running with version 2.7.0 

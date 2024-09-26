@@ -16,7 +16,7 @@ import com.example.googlesheetsapi.dto.GoogleSheetResponseDTO;
 import com.example.googlesheetsapi.service.GoogleSheetsApiService;
 
 @RestController
-// @RequestMapping
+@RequestMapping
 public class DashboardController {
 	@Autowired
 	private GoogleSheetsApiService googleSheetsApiService;
@@ -30,6 +30,11 @@ public class DashboardController {
 	@GetMapping("/getData")
 	public Map<Object,Object> readDataFromGoogleSheet() throws GeneralSecurityException, IOException {
 		return googleSheetsApiService.readDataFromGoogleSheet();
+	}
+	
+	@GetMapping("/attributes")
+	public Map<String,String> getAttributesUser() throws IOException, GeneralSecurityException{
+		return googleSheetsApiService.getAttributesUser();
 	}
 	
 	// Antes retornava string (link da planilha no Sheets)

@@ -23,5 +23,8 @@ public class GoogleSheetsApiService {
 	public GoogleSheetResponseDTO createSheet(GoogleSheetDTO request) throws GeneralSecurityException, IOException {
 		return googleSheetsApiUtil.createGoogleSheets(request);
 	}
-
+	
+	public Map<String,String> getAttributesUser() throws IOException, GeneralSecurityException{
+		return googleSheetsApiUtil.getAttributesUser();
+	}
 }
