@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.example.googlesheetsapi.dto.GoogleSheetDTO;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
@@ -27,6 +29,10 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
+import com.google.api.services.sheets.v4.model.Sheet;
+import com.google.api.services.sheets.v4.model.SheetProperties;
+import com.google.api.services.sheets.v4.model.Spreadsheet;
+import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
 import com.google.api.services.sheets.v4.model.ValueRange;
 
 @Component
@@ -36,7 +42,7 @@ public class GoogleSheetsApiUtil {
 	private static final String TOKENS_DIRECTORY_PATH = "tokens";
 	
 	private static final List<String> SCOPES =
-			Collections.singletonList(SheetsScopes.SPREADSHEETS);
+			Arrays.asList(SheetsScopes.SPREADSHEETS, SheetsScopes.DRIVE);
 	private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 	
 	
@@ -52,7 +58,7 @@ public class GoogleSheetsApiUtil {
 		
 		GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
 				HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-				.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
+				.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(System.getProperty("user.home"), TOKENS_DIRECTORY_PATH)))
 				.setAccessType("offline").build();
 		
 		LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
@@ -66,14 +72,10 @@ public class GoogleSheetsApiUtil {
 	 * @throws GeneralSecurityException 
 	*/
 	
-	public Map<Object,Object> getDataFromGoogleSheet() throws GeneralSecurityException, IOException {
-		final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+	public Map<Object,Object> getDataFromGoogleSheet() throws GeneralSecurityException, IOException {		
 		final String spreadsheetId = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms";
 		final String range = "Class Data!A2:E";
-		Sheets service = 
-				new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-				.setApplicationName(APPLICATION_NAME)
-				.build();
+		Sheets service = getSheetService();
 		ValueRange response = service.spreadsheets().values()
 				.get(spreadsheetId, range)
 				.execute();
@@ -93,6 +95,40 @@ public class GoogleSheetsApiUtil {
 			}			
 		}
 		return storedDataFromGoogleSheets;
+	}
+	
+	// Como esta ação será usada por dois métodos, o melhor é abstraí-lo em um método private
+	// que pode ser usado em qual outra função desta classe.
+	private Sheets getSheetService() throws GeneralSecurityException, IOException {
+		final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+		Sheets service = 
+				new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+				.setApplicationName(APPLICATION_NAME)
+				.build();
+		return service;
+	}
+
+	// Criação de uma planilha....
+	public String createGoogleSheets(GoogleSheetDTO request) throws GeneralSecurityException, IOException {
+		Sheets service = getSheetService();
+		
+		// Planilha
+		SpreadsheetProperties spreadsheetProperties = new SpreadsheetProperties();
+		spreadsheetProperties.setTitle(request.getSheetName());
+		
+		// Folha
+		SheetProperties sheetProperties = new SheetProperties();
+		sheetProperties.setTitle(request.getSheetName());
+		
+		Sheet sheet = new Sheet().setProperties(sheetProperties);
+		
+		Spreadsheet spreadsheet = new Spreadsheet().setProperties(spreadsheetProperties).setSheets(Collections.singletonList(sheet));
+		
+		// ValueRange valueRange = new ValueRange().setValues(request.getDataToBeUpdate());
+		// service.spreadsheets().values().update(spreadsheet.getSpreadsheetId(), "A1", valueRange);
+		// update(spreadsheetId, range, content);
+		
+		return service.spreadsheets().create(spreadsheet).execute().getSpreadsheetUrl();	
 	}
 	
 	/*public static void main(String[] args) throws GeneralSecurityException, IOException {
