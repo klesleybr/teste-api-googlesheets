@@ -17,6 +17,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import com.example.googlesheetsapi.dto.GoogleSheetDTO;
+import com.example.googlesheetsapi.dto.GoogleSheetResponseDTO;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
@@ -27,6 +28,8 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.model.Permission;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.Sheet;
@@ -107,9 +110,18 @@ public class GoogleSheetsApiUtil {
 				.build();
 		return service;
 	}
+	
+	private Drive getDriveService() throws GeneralSecurityException, IOException {
+		final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+		Drive driveService = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+				.setApplicationName(APPLICATION_NAME).build();
+		
+		return driveService;		
+	}
+	
 
 	// Criação de uma planilha....
-	public String createGoogleSheets(GoogleSheetDTO request) throws GeneralSecurityException, IOException {
+	public GoogleSheetResponseDTO createGoogleSheets(GoogleSheetDTO request) throws GeneralSecurityException, IOException {
 		Sheets service = getSheetService();
 		
 		// Planilha
@@ -123,12 +135,38 @@ public class GoogleSheetsApiUtil {
 		Sheet sheet = new Sheet().setProperties(sheetProperties);
 		
 		Spreadsheet spreadsheet = new Spreadsheet().setProperties(spreadsheetProperties).setSheets(Collections.singletonList(sheet));
+		service.spreadsheets().create(spreadsheet).execute();
+		Spreadsheet createdResponse = service.spreadsheets().create(spreadsheet).execute();
 		
-		// ValueRange valueRange = new ValueRange().setValues(request.getDataToBeUpdate());
-		// service.spreadsheets().values().update(spreadsheet.getSpreadsheetId(), "A1", valueRange);
+		ValueRange valueRange = new ValueRange().setValues(request.getDataToBeUpdated());
+		
+		GoogleSheetResponseDTO response = new GoogleSheetResponseDTO();
+		
+		service.spreadsheets().values().update(createdResponse.getSpreadsheetId(), "A1", valueRange).setValueInputOption("RAW").execute();
+		
+		response.setSpreadsheetId(createdResponse.getSpreadsheetId());
+		response.setSpreadsheetUrl(createdResponse.getSpreadsheetUrl());
 		// update(spreadsheetId, range, content);
+		// define-se uma lista usando [] --> List<Object> lista = [1, 2, 3];
+		// nesse caso, List<List<Object>> listaAninhada = [["Eu sou"], ["uma"], ["lista aninhada"]];
+		// isso é útil no PostMan.
 		
-		return service.spreadsheets().create(spreadsheet).execute().getSpreadsheetUrl();	
+		Drive driveService = getDriveService();
+		
+		if(!(request.getEmails().isEmpty())) {
+			request.getEmails().forEach(emailAddress -> {
+				Permission permission = new Permission().setType("user").setRole("writer").setEmailAddress(emailAddress);
+				try {
+					driveService.permissions().create(createdResponse.getSpreadsheetId(), permission).setSendNotificationEmail(true)
+					.setEmailMessage("Teste de envio de emails -> Google Sheets API").execute();
+				} catch (IOException e) {		
+					e.printStackTrace();
+				}
+			});			
+		}
+		
+		
+		return response;
 	}
 	
 	/*public static void main(String[] args) throws GeneralSecurityException, IOException {

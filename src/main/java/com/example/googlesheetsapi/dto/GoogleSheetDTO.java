@@ -5,13 +5,22 @@ import java.util.List;
 public class GoogleSheetDTO {
 	private String sheetName;
 	
-	private List<List<Object>> dataToBeUpdate;
+	private List<List<Object>> dataToBeUpdated;
 	
-	public List<List<Object>> getDataToBeUpdate(){
-		return dataToBeUpdate;
+	private List<String> emails;
+	
+	public List<String> getEmails(){
+		return emails;
 	}
-	public void setDataToBeUdpdate(List<List<Object>> dataToBeUpdate) {
-		this.dataToBeUpdate = dataToBeUpdate;
+	public void sertEmails(List<String> emails) {
+		this.emails = emails;
+	}
+	
+	public List<List<Object>> getDataToBeUpdated(){
+		return dataToBeUpdated;
+	}
+	public void setDataToBeUdpdate(List<List<Object>> dataToBeUpdated) {
+		this.dataToBeUpdated = dataToBeUpdated;
 	}
 	
 	public String getSheetName() {

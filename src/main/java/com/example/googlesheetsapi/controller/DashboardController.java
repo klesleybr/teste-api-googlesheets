@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.googlesheetsapi.dto.GoogleSheetDTO;
+import com.example.googlesheetsapi.dto.GoogleSheetResponseDTO;
 import com.example.googlesheetsapi.service.GoogleSheetsApiService;
 
 @RestController
@@ -31,12 +32,12 @@ public class DashboardController {
 		return googleSheetsApiService.readDataFromGoogleSheet();
 	}
 	
+	// Antes retornava string (link da planilha no Sheets)
 	@PostMapping("/createSheet")
-	public String createGoogleSheets(@RequestBody GoogleSheetDTO request) throws GeneralSecurityException, IOException {
-		String urlSheet = googleSheetsApiService.createSheet(request);
-		System.out.println("Link da Planilha: " + urlSheet);
-		return urlSheet;
+	public GoogleSheetResponseDTO createGoogleSheets(@RequestBody GoogleSheetDTO request) throws GeneralSecurityException, IOException {
+		return googleSheetsApiService.createSheet(request);
 	}
 	
-	
+	// Vídeo: https://youtu.be/4mP3Fsi4hio
+	// Parou em 01:12:48 - finalizada a criação de uma tabela
 }
