@@ -11,3 +11,5 @@ public class GooglesheetsapiApplication {
 	}
 
 }
+
+// Até aqui, é possível fazer leituras dos dados de um formulário rodando a aplicação como Spring...

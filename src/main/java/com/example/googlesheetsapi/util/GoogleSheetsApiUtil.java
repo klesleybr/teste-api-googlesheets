@@ -9,7 +9,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Component;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -25,6 +29,7 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
 
+@Component
 public class GoogleSheetsApiUtil {
 	private static final String APPLICATION_NAME = "Google Sheets API Java Quickstart";
 	private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
@@ -61,7 +66,7 @@ public class GoogleSheetsApiUtil {
 	 * @throws GeneralSecurityException 
 	*/
 	
-	public static void main(String[] args) throws GeneralSecurityException, IOException {
+	public Map<Object,Object> getDataFromGoogleSheet() throws GeneralSecurityException, IOException {
 		final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
 		final String spreadsheetId = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms";
 		final String range = "Class Data!A2:E";
@@ -74,17 +79,25 @@ public class GoogleSheetsApiUtil {
 				.execute();
 		List<List<Object>> values = response.getValues();
 		
+		Map<Object,Object> storedDataFromGoogleSheets = new HashMap<>();
+		
 		if(values == null || values.isEmpty()) {
 			System.out.println("No data found.");
 		} else {
 			System.out.println("Name, Major");
 			for (List row : values) {
+				storedDataFromGoogleSheets.put(row.get(0), row.get(4));
+				
 				// Print columns A and E, which correspond to indices 0 and 4.
 				System.out.printf("%s, %s\n", row.get(0), row.get(4));
-			}
+			}			
 		}
-		
+		return storedDataFromGoogleSheets;
 	}
+	
+	/*public static void main(String[] args) throws GeneralSecurityException, IOException {
+		
+	}*/
 }
 
 /*Caused by: java.lang.IllegalStateException: You are currently running with version 2.7.0 
